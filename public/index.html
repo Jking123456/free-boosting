@@ -151,7 +151,7 @@
                 body: JSON.stringify({ url: url, service_type: service })
             });
             const result = await response.json();
-            alert(result.message || "Boost Sequence Initiated!");
+            alert(result.message || "✅ Boost Order has been Placed");
         } catch (e) { 
             alert("Bridge error: Check console for details."); 
         } finally { 
