@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOMER // Boosting Terminal</title>
+    <title>AXH // Boosting Terminal</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -46,25 +46,31 @@
             width: 100%; background: #000; border: 1px solid #222;
             color: white; padding: 14px; border-radius: 8px;
             box-sizing: border-box; margin-bottom: 20px; outline: none;
+            font-size: 0.85rem;
         }
         
-        select:disabled { border-color: #ff4b2b55; opacity: 1; -webkit-text-fill-color: white; }
+        select:focus, input:focus { border-color: var(--accent-red); }
 
         .btn-init {
             width: 100%; padding: 16px; border: none; border-radius: 10px;
             background: linear-gradient(to right, #ff4b2b, #ff7e5f);
             color: white; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
+            transition: transform 0.1s;
         }
+        .btn-init:active { transform: scale(0.98); }
 
         .activity-list {
             border-top: 1px solid #222; margin-top: 35px; padding-top: 20px; font-size: 0.7rem;
+            min-height: 80px;
         }
 
         .activity-row {
             display: grid; grid-template-columns: 1.2fr 1fr 1fr;
             padding: 5px 0; color: var(--text-gray);
+            border-bottom: 1px solid #1a1a1a;
         }
+        .activity-row:last-child { border: none; }
         .activity-row .service { color: var(--accent-orange); text-align: center; }
         .activity-row .time { text-align: right; }
     </style>
@@ -72,7 +78,7 @@
 <body>
 
 <div class="terminal-card">
-    <h2>HOMER BOOSTING</h2>
+    <h1>AXH</h1>
     <div class="subtitle">FREE BOOSTING TERMINAL</div>
 
     <div class="stats-container">
@@ -82,7 +88,16 @@
 
     <div class="input-group">
         <label>Service Type</label>
-        <select id="service-type" disabled><option>FACEBOOK // BOOST</option></select>
+        <select id="service-type">
+            <option value="tiktok_views">TIKTOK // VIEWS</option>
+            <option value="tiktok_likes">TIKTOK // LIKES</option>
+            <option value="tiktok_followers">TIKTOK // FOLLOWERS</option>
+            <option value="instagram_views">INSTAGRAM // VIEWS</option>
+            <option value="telegram_views">TELEGRAM // VIEWS</option>
+            <option value="youtube_views">YOUTUBE // VIEWS</option>
+            <option value="facebook_boost">FACEBOOK // BOOST</option>
+            <option value="twitter_views">TWITTER // VIEWS</option>
+        </select>
 
         <label>Target Identifier</label>
         <input type="text" id="target-url" placeholder="Paste URL here...">
@@ -101,7 +116,6 @@
 
     async function updateStatus() {
         try {
-            // Updated to call your local bridge
             const res = await fetch('/api/status');
             const data = await res.json();
 
@@ -123,7 +137,9 @@
     async function startBoost() {
         const btn = document.getElementById('init-btn');
         const url = document.getElementById('target-url').value;
-        if(!url) return alert("URL required");
+        const service = document.getElementById('service-type').value;
+
+        if(!url) return alert("Target URL is required");
 
         btn.innerText = "PROCESSING...";
         btn.disabled = true;
@@ -132,12 +148,16 @@
             const response = await fetch('/api/boost', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url, service_type: "facebook_boost" })
+                body: JSON.stringify({ url: url, service_type: service })
             });
             const result = await response.json();
-            alert(result.message || "Initialized!");
-        } catch (e) { alert("Bridge error"); }
-        finally { btn.innerText = "INITIALIZE"; btn.disabled = false; }
+            alert(result.message || "Boost Sequence Initiated!");
+        } catch (e) { 
+            alert("Bridge error: Check console for details."); 
+        } finally { 
+            btn.innerText = "INITIALIZE"; 
+            btn.disabled = false; 
+        }
     }
 
     setInterval(updateStatus, 20000);
@@ -145,3 +165,4 @@
 </script>
 </body>
 </html>
+
