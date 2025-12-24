@@ -21,23 +21,16 @@
             background-size: 50px 50px;
             color: white;
             font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden;
         }
 
         .terminal-card {
             background: var(--card-bg);
-            width: 380px;
-            padding: 40px;
-            border-radius: 24px;
+            width: 380px; padding: 40px; border-radius: 24px;
             border-top: 2px solid #4a0e0e;
             box-shadow: 0 30px 60px rgba(0,0,0,0.8);
             text-align: center;
-            position: relative;
         }
 
         h1 { font-size: 2.2rem; letter-spacing: 6px; margin: 0; color: #eee; }
@@ -45,62 +38,33 @@
 
         .stats-container { margin-bottom: 30px; font-family: 'Courier New', monospace; font-size: 0.9rem; }
         .stat-line { margin: 5px 0; color: var(--text-gray); }
-        .stat-line span { font-weight: bold; }
 
         .input-group { text-align: left; }
         label { color: var(--text-gray); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 8px; }
 
         select, input {
-            width: 100%;
-            background: #000;
-            border: 1px solid #222;
-            color: white;
-            padding: 14px;
-            border-radius: 8px;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-            outline: none;
-            font-size: 0.85rem;
+            width: 100%; background: #000; border: 1px solid #222;
+            color: white; padding: 14px; border-radius: 8px;
+            box-sizing: border-box; margin-bottom: 20px; outline: none;
         }
         
-        select:disabled { border-color: #ff4b2b55; opacity: 1; -webkit-text-fill-color: white; cursor: not-allowed; }
-        input:focus { border-color: var(--accent-red); }
+        select:disabled { border-color: #ff4b2b55; opacity: 1; -webkit-text-fill-color: white; }
 
         .btn-init {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 10px;
+            width: 100%; padding: 16px; border: none; border-radius: 10px;
             background: linear-gradient(to right, #ff4b2b, #ff7e5f);
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
+            color: white; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
-            margin-top: 10px;
-            transition: 0.2s;
         }
 
-        .btn-init:hover { opacity: 0.9; }
-        .btn-init:disabled { background: #333; box-shadow: none; cursor: wait; }
-
         .activity-list {
-            border-top: 1px solid #222;
-            margin-top: 35px;
-            padding-top: 20px;
-            font-size: 0.7rem;
-            min-height: 80px;
+            border-top: 1px solid #222; margin-top: 35px; padding-top: 20px; font-size: 0.7rem;
         }
 
         .activity-row {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr 1fr;
-            padding: 5px 0;
-            color: var(--text-gray);
-            border-bottom: 1px solid #1a1a1a;
+            display: grid; grid-template-columns: 1.2fr 1fr 1fr;
+            padding: 5px 0; color: var(--text-gray);
         }
-
-        .activity-row:last-child { border: none; }
         .activity-row .service { color: var(--accent-orange); text-align: center; }
         .activity-row .time { text-align: right; }
     </style>
@@ -112,24 +76,21 @@
     <div class="subtitle">FREE BOOSTING TERMINAL</div>
 
     <div class="stats-container">
-        <div class="stat-line">GLOBAL BOOSTS: <span style="color: var(--green);" id="global-boosts">--</span></div>
-        <div class="stat-line">ACTIVE PROXIES: <span style="color: var(--accent-red);" id="active-proxies">--</span></div>
+        <div class="stat-line">BOOSTS: <span style="color: var(--green);" id="global-boosts">--</span></div>
+        <div class="stat-line">PROXIES: <span style="color: var(--accent-red);" id="active-proxies">--</span></div>
     </div>
 
     <div class="input-group">
         <label>Service Type</label>
-        <select id="service-type" disabled>
-            <option value="facebook_boost">FACEBOOK // BOOST</option>
-        </select>
+        <select id="service-type" disabled><option>FACEBOOK // BOOST</option></select>
 
-        <label>Target URL</label>
-        <input type="text" id="target-url" placeholder="https://www.facebook.com/...">
+        <label>Target Identifier</label>
+        <input type="text" id="target-url" placeholder="Paste URL here...">
     </div>
 
     <button class="btn-init" id="init-btn" onclick="startBoost()">INITIALIZE</button>
 
-    <div class="activity-list" id="activity-list">
-        </div>
+    <div class="activity-list" id="activity-list"></div>
 </div>
 
 <script>
@@ -140,7 +101,8 @@
 
     async function updateStatus() {
         try {
-            const res = await fetch('https://axhfreeboosting.axelhosting.xyz/api/status');
+            // Updated to call your local bridge
+            const res = await fetch('/api/status');
             const data = await res.json();
 
             document.getElementById('global-boosts').innerText = data.global_boosts;
@@ -152,21 +114,16 @@
             data.recent_activity.slice(0, 3).forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'activity-row';
-                row.innerHTML = `
-                    <span>User Boosted</span>
-                    <span class="service">${item.service}</span>
-                    <span class="time">${formatTime(item.timestamp)}</span>
-                `;
+                row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">${formatTime(item.timestamp)}</span>`;
                 list.appendChild(row);
             });
-        } catch (e) { console.warn("Refresh failed"); }
+        } catch (e) { console.warn("Status sync failed"); }
     }
 
     async function startBoost() {
         const btn = document.getElementById('init-btn');
         const url = document.getElementById('target-url').value;
-        
-        if(!url.includes("facebook.com")) return alert("Please enter a valid Facebook URL");
+        if(!url) return alert("URL required");
 
         btn.innerText = "PROCESSING...";
         btn.disabled = true;
@@ -178,20 +135,13 @@
                 body: JSON.stringify({ url: url, service_type: "facebook_boost" })
             });
             const result = await response.json();
-            alert(result.message || "Boost Sequence Initiated!");
-        } catch (e) {
-            alert("Error: Could not connect to API.");
-        } finally {
-            btn.innerText = "INITIALIZE";
-            btn.disabled = false;
-        }
+            alert(result.message || "Initialized!");
+        } catch (e) { alert("Bridge error"); }
+        finally { btn.innerText = "INITIALIZE"; btn.disabled = false; }
     }
 
-    // Auto-refresh every 20 seconds
     setInterval(updateStatus, 20000);
     updateStatus(); 
 </script>
-
 </body>
 </html>
-
