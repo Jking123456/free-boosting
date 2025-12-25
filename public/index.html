@@ -33,7 +33,7 @@
             text-align: center;
         }
 
-        h1 { font-size: 2.2rem; letter-spacing: 6px; margin: 0; color: #eee; }
+        h2 { font-size: 1.8rem; letter-spacing: 4px; margin: 0; color: #eee; text-transform: uppercase; }
         .subtitle { color: var(--accent-red); font-weight: 700; font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 30px; }
 
         .stats-container { margin-bottom: 30px; font-family: 'Courier New', monospace; font-size: 0.9rem; }
@@ -111,11 +111,13 @@
 <script>
     function formatTime(ts) {
         const sec = Math.floor(Date.now() / 1000 - ts);
+        if (sec < 0) return "Just now";
         return sec < 60 ? `${sec}s ago` : `${Math.floor(sec/60)}m ago`;
     }
 
     async function updateStatus() {
         try {
+            // This calls your Vercel bridge to avoid CORS errors
             const res = await fetch('/api/status');
             const data = await res.json();
 
@@ -125,12 +127,14 @@
             const list = document.getElementById('activity-list');
             list.innerHTML = ''; 
 
-            data.recent_activity.slice(0, 3).forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'activity-row';
-                row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">${formatTime(item.timestamp)}</span>`;
-                list.appendChild(row);
-            });
+            if(data.recent_activity) {
+                data.recent_activity.slice(0, 3).forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'activity-row';
+                    row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">${formatTime(item.timestamp)}</span>`;
+                    list.appendChild(row);
+                });
+            }
         } catch (e) { console.warn("Status sync failed"); }
     }
 
@@ -160,9 +164,9 @@
         }
     }
 
-    setInterval(updateStatus, 20000);
+    // UPDATED: Refresh every 5 seconds
+    setInterval(updateStatus, 5000); 
     updateStatus(); 
 </script>
 </body>
 </html>
-
