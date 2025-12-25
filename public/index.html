@@ -52,6 +52,7 @@
         
         select:focus, input:focus { border-color: var(--accent-red); }
 
+        /* Turnstile Container Styling */
         .cf-turnstile { margin-bottom: 20px; display: flex; justify-content: center; }
 
         .btn-init {
@@ -59,9 +60,9 @@
             background: linear-gradient(to right, #ff4b2b, #ff7e5f);
             color: white; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
+            transition: transform 0.1s;
         }
-
-        .btn-init:disabled { background: #333; cursor: not-allowed; opacity: 0.6; }
+        .btn-init:active { transform: scale(0.98); }
 
         .activity-list {
             border-top: 1px solid #222; margin-top: 35px; padding-top: 20px; font-size: 0.7rem;
@@ -124,8 +125,8 @@
         try {
             const res = await fetch('/api/status');
             const data = await res.json();
-            document.getElementById('global-boosts').innerText = data.global_boosts || 0;
-            document.getElementById('active-proxies').innerText = data.active_proxies || 0;
+            document.getElementById('global-boosts').innerText = data.global_boosts;
+            document.getElementById('active-proxies').innerText = data.active_proxies;
             const list = document.getElementById('activity-list');
             list.innerHTML = ''; 
             if(data.recent_activity) {
@@ -136,39 +137,47 @@
                     list.appendChild(row);
                 });
             }
-        } catch (e) { console.warn("Sync failed"); }
+        } catch (e) { console.warn("Status sync failed"); }
     }
 
     async function startBoost() {
         const btn = document.getElementById('init-btn');
         const url = document.getElementById('target-url').value;
         const service = document.getElementById('service-type').value;
-        const token = turnstile.getResponse();
+        const turnstileToken = document.querySelector('[name="cf-turnstile-response"]').value;
 
-        if(!url) return alert("URL required");
-        if(!token) return alert("Please solve the security check");
+        if(!url) return alert("Target URL is required");
+        if(!turnstileToken) return alert("Please complete the security check");
 
         btn.innerText = "PROCESSING...";
         btn.disabled = true;
 
         try {
-            const res = await fetch('/api/boost', {
+            const response = await fetch('/api/boost', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, service_type: service, captcha_token: token })
+                body: JSON.stringify({ 
+                    url: url, 
+                    service_type: service,
+                    captcha_token: turnstileToken 
+                })
             });
-            const result = await res.json();
-            if(res.ok) alert("✅ Success: Order Placed");
-            else alert("❌ Error: " + (result.message || "Failed"));
-        } catch (e) { alert("❌ Network Error"); }
-        finally {
-            turnstile.reset(); // Always reset so they can try again
-            btn.innerText = "INITIALIZE";
-            btn.disabled = false;
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message || "✅ Boost Order has been Placed");
+            } else {
+                alert("❌ Verification failed: " + (result.error || "Security Check Error"));
+                turnstile.reset(); // Reset the widget on failure
+            }
+        } catch (e) { 
+            alert("Bridge error: Check console for details."); 
+        } finally { 
+            btn.innerText = "INITIALIZE"; 
+            btn.disabled = false; 
         }
     }
 
-    setInterval(updateStatus, 5000); // REFRESH EVERY 5 SECONDS
+    setInterval(updateStatus, 5000); 
     updateStatus(); 
 </script>
 </body>
