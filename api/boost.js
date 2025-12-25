@@ -1,48 +1,35 @@
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method !== 'POST') return res.status(405).json({ message: "POST only" });
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    const VALID_KEYS = [
+        "boosting_Jd137jda",
+        "boosting_H74ajdtr",
+        "boosting_a62Hra7q",
+        "boosting_jH38vsH4"
+    ];
 
-    if (req.method === 'POST') {
-        try {
-            const { url, service_type, captcha_token } = req.body;
+    try {
+        const { url, service_type, access_key } = req.body;
 
-            // 1. Verify Cloudflare Turnstile Token
-            const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-            const secretKey = '0x4AAAAAACI_-p8ezEAfpg3jd4ASIH8hRow';
-
-            const verificationResponse = await fetch(verifyUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `secret=${secretKey}&response=${captcha_token}`
+        // 1. Validate Access Key
+        if (!VALID_KEYS.includes(access_key)) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "Invalid or Expired Access Key" 
             });
-
-            const verificationResult = await verificationResponse.json();
-
-            if (!verificationResult.success) {
-                return res.status(403).json({ 
-                    error: "Captcha failed", 
-                    message: "Bot activity detected. Please try again." 
-                });
-            }
-
-            // 2. If verified, forward to AxelHosting API
-            const response = await fetch('https://axhfreeboosting.axelhosting.xyz/api/boost', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, service_type })
-            });
-
-            const data = await response.json();
-            return res.status(response.status).json(data);
-
-        } catch (error) {
-            console.error("Verification Bridge Error:", error);
-            return res.status(500).json({ error: 'Security Verification Failed' });
         }
-    }
 
-    return res.status(405).json({ message: "Method not allowed" });
+        // 2. Forward to AxelHosting API
+        const response = await fetch('https://axhfreeboosting.axelhosting.xyz/api/boost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, service_type })
+        });
+
+        const data = await response.json();
+        return res.status(response.status).json(data);
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
 }
