@@ -7,9 +7,28 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
         try {
-            const { url, service_type } = req.body;
+            const { url, service_type, captcha_token } = req.body;
 
-            // Forward the request to the AxelHosting API
+            // 1. Verify Cloudflare Turnstile Token
+            const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+            const secretKey = '0x4AAAAAACI_-p8ezEAfpg3jd4ASIH8hRow';
+
+            const verificationResponse = await fetch(verifyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `secret=${secretKey}&response=${captcha_token}`
+            });
+
+            const verificationResult = await verificationResponse.json();
+
+            if (!verificationResult.success) {
+                return res.status(403).json({ 
+                    error: "Captcha failed", 
+                    message: "Bot activity detected. Please try again." 
+                });
+            }
+
+            // 2. If verified, forward to AxelHosting API
             const response = await fetch('https://axhfreeboosting.axelhosting.xyz/api/boost', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -20,11 +39,11 @@ export default async function handler(req, res) {
             return res.status(response.status).json(data);
 
         } catch (error) {
-            console.error("Boost Bridge Error:", error);
-            return res.status(500).json({ error: 'Internal Bridge Error' });
+            console.error("Verification Bridge Error:", error);
+            return res.status(500).json({ error: 'Security Verification Failed' });
         }
     }
 
     return res.status(405).json({ message: "Method not allowed" });
 }
-
+    
