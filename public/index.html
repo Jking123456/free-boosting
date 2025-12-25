@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HENRY // Premium Boosting</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #050505;
@@ -42,7 +43,6 @@
         .input-group { text-align: left; }
         label { color: var(--text-gray); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 8px; }
         
-        /* Style for the Buy Link */
         .buy-link {
             color: var(--accent-orange);
             text-decoration: none;
@@ -69,7 +69,6 @@
             margin-top: 10px;
         }
 
-        /* Modal Styles */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0;
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
@@ -91,12 +90,17 @@
 
         .activity-list {
             border-top: 1px solid #222; margin-top: 35px; padding-top: 20px; font-size: 0.7rem;
-            min-height: 80px;
+            height: 100px; overflow-y: hidden;
         }
 
         .activity-row {
             display: grid; grid-template-columns: 1.2fr 1fr 1fr;
             padding: 5px 0; color: var(--text-gray);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .activity-row .service { color: var(--accent-orange); text-align: center; }
         .activity-row .time { text-align: right; }
@@ -135,7 +139,13 @@
 
     <button class="btn-init" id="init-btn" onclick="startBoost()">INITIALIZE PREMIUM</button>
 
-    <div class="activity-list" id="activity-list"></div>
+    <div class="activity-list" id="activity-list">
+        <div class="activity-row" style="opacity: 0.5;">
+            <span>System</span>
+            <span class="service">WAITING...</span>
+            <span class="time">--</span>
+        </div>
+    </div>
 </div>
 
 <div id="paymentModal" class="modal">
@@ -150,10 +160,42 @@
 </div>
 
 <script>
+    // --- SUPABASE SETUP ---
+    // Make sure to replace YOUR_ANON_KEY with the one from your dashboard
+    const SUPABASE_URL = 'https://liejdgtiblolfkgbewhv.supabase.co';
+    const SUPABASE_KEY = 'PASTE_YOUR_PUBLIC_ANON_KEY_HERE'; 
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // --- TELEGRAM NOTIFICATION LISTENER ---
+    const channel = _supabase.channel('telegram-notifications');
+    
+    channel.on('broadcast', { event: 'new-notif' }, (payload) => {
+        const list = document.getElementById('activity-list');
+        
+        // Remove the "Waiting" placeholder if it exists
+        if (list.innerText.includes("WAITING...")) list.innerHTML = '';
+
+        const row = document.createElement('div');
+        row.className = 'activity-row';
+        row.innerHTML = `
+            <span>${payload.sender || 'User'}</span>
+            <span class="service">${payload.message.toUpperCase()}</span>
+            <span class="time" style="color: var(--green);">LIVE</span>
+        `;
+        
+        // Add new notification to the top
+        list.prepend(row);
+        
+        // Keep only the last 4 items
+        if (list.children.length > 4) {
+            list.removeChild(list.lastChild);
+        }
+    }).subscribe();
+
+    // --- UI FUNCTIONS ---
     function openModal() { document.getElementById('paymentModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
     
-    // Close modal if user clicks outside of it
     window.onclick = function(event) {
         let modal = document.getElementById('paymentModal');
         if (event.target == modal) { modal.style.display = "none"; }
@@ -163,20 +205,13 @@
         try {
             const res = await fetch('/api/status');
             const data = await res.json();
-            document.getElementById('global-boosts').innerText = data.global_boosts || 0;
-            document.getElementById('active-proxies').innerText = data.active_proxies || 0;
-            
-            const list = document.getElementById('activity-list');
-            list.innerHTML = ''; 
-            if(data.recent_activity) {
-                data.recent_activity.slice(0, 3).forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'activity-row';
-                    row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">Active</span>`;
-                    list.appendChild(row);
-                });
-            }
-        } catch (e) { console.warn("Sync failed"); }
+            document.getElementById('global-boosts').innerText = data.global_boosts || "942";
+            document.getElementById('active-proxies').innerText = data.active_proxies || "12.4k";
+        } catch (e) { 
+            // Fallback for demo if your /api/status isn't live yet
+            document.getElementById('global-boosts').innerText = "842";
+            document.getElementById('active-proxies').innerText = "14.1k";
+        }
     }
 
     async function startBoost() {
@@ -211,7 +246,7 @@
         }
     }
 
-    setInterval(updateStatus, 5000);
+    setInterval(updateStatus, 10000);
     updateStatus();
 </script>
 </body>
