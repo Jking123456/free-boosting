@@ -41,6 +41,16 @@
 
         .input-group { text-align: left; }
         label { color: var(--text-gray); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; display: block; margin-bottom: 8px; }
+        
+        /* Style for the Buy Link */
+        .buy-link {
+            color: var(--accent-orange);
+            text-decoration: none;
+            cursor: pointer;
+            font-style: italic;
+            margin-left: 5px;
+        }
+        .buy-link:hover { text-decoration: underline; }
 
         select, input {
             width: 100%; background: #000; border: 1px solid #222;
@@ -57,6 +67,26 @@
             color: white; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
             margin-top: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #fff; padding: 20px; border-radius: 15px;
+            text-align: center; max-width: 300px; position: relative;
+        }
+        .modal-content img { width: 100%; border-radius: 10px; }
+        .close-btn {
+            position: absolute; top: 10px; right: 15px;
+            color: #333; font-size: 24px; cursor: pointer; font-weight: bold;
+        }
+        .fb-link {
+            display: block; margin-top: 15px; color: #1877f2;
+            text-decoration: none; font-weight: bold; font-size: 0.8rem;
         }
 
         .activity-list {
@@ -99,7 +129,7 @@
         <label>Target Identifier</label>
         <input type="text" id="target-url" placeholder="Paste URL here...">
 
-        <label>Access Key</label>
+        <label>Access Key // <span class="buy-link" onclick="openModal()">buy access key</span></label>
         <input type="password" id="access-key" placeholder="Enter Premium Key...">
     </div>
 
@@ -108,7 +138,27 @@
     <div class="activity-list" id="activity-list"></div>
 </div>
 
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 style="color: #000; margin-top: 0;">GCash Payment</h3>
+        <img src="8667.jpg" alt="GCash QR Code">
+        <a href="https://www.facebook.com/profile.php?id=61583017822517" target="_blank" class="fb-link">
+            Message me on Facebook
+        </a>
+    </div>
+</div>
+
 <script>
+    function openModal() { document.getElementById('paymentModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
+    
+    // Close modal if user clicks outside of it
+    window.onclick = function(event) {
+        let modal = document.getElementById('paymentModal');
+        if (event.target == modal) { modal.style.display = "none"; }
+    }
+
     async function updateStatus() {
         try {
             const res = await fetch('/api/status');
