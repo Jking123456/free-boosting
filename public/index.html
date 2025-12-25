@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOMER // Boosting Terminal</title>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <title>HOMER // Premium Boosting</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -29,7 +28,7 @@
         .terminal-card {
             background: var(--card-bg);
             width: 380px; padding: 40px; border-radius: 24px;
-            border-top: 2px solid #4a0e0e;
+            border-top: 2px solid var(--accent-red);
             box-shadow: 0 30px 60px rgba(0,0,0,0.8);
             text-align: center;
         }
@@ -46,23 +45,19 @@
         select, input {
             width: 100%; background: #000; border: 1px solid #222;
             color: white; padding: 14px; border-radius: 8px;
-            box-sizing: border-box; margin-bottom: 20px; outline: none;
+            box-sizing: border-box; margin-bottom: 15px; outline: none;
             font-size: 0.85rem;
         }
         
-        select:focus, input:focus { border-color: var(--accent-red); }
-
-        /* Turnstile Container Styling */
-        .cf-turnstile { margin-bottom: 20px; display: flex; justify-content: center; }
+        input:focus { border-color: var(--accent-red); }
 
         .btn-init {
             width: 100%; padding: 16px; border: none; border-radius: 10px;
             background: linear-gradient(to right, #ff4b2b, #ff7e5f);
             color: white; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 75, 43, 0.3);
-            transition: transform 0.1s;
+            margin-top: 10px;
         }
-        .btn-init:active { transform: scale(0.98); }
 
         .activity-list {
             border-top: 1px solid #222; margin-top: 35px; padding-top: 20px; font-size: 0.7rem;
@@ -72,9 +67,7 @@
         .activity-row {
             display: grid; grid-template-columns: 1.2fr 1fr 1fr;
             padding: 5px 0; color: var(--text-gray);
-            border-bottom: 1px solid #1a1a1a;
         }
-        .activity-row:last-child { border: none; }
         .activity-row .service { color: var(--accent-orange); text-align: center; }
         .activity-row .time { text-align: right; }
     </style>
@@ -82,12 +75,12 @@
 <body>
 
 <div class="terminal-card">
-    <h2>HOMER BOOSTING</h2>
-    <div class="subtitle">FREE BOOSTING TERMINAL</div>
+    <h2>HOMER PREMIUM</h2>
+    <div class="subtitle">PREMIUM BOOSTING TERMINAL</div>
 
     <div class="stats-container">
-        <div class="stat-line">BOOSTS: <span style="color: var(--green);" id="global-boosts">--</span></div>
-        <div class="stat-line">PROXIES: <span style="color: var(--accent-red);" id="active-proxies">--</span></div>
+        <div class="stat-line">ACTIVE BOOSTS: <span style="color: var(--green);" id="global-boosts">--</span></div>
+        <div class="stat-line">PREMIUM NODES: <span style="color: var(--accent-red);" id="active-proxies">--</span></div>
     </div>
 
     <div class="input-group">
@@ -105,80 +98,71 @@
 
         <label>Target Identifier</label>
         <input type="text" id="target-url" placeholder="Paste URL here...">
+
+        <label>Access Key</label>
+        <input type="password" id="access-key" placeholder="Enter Premium Key...">
     </div>
 
-    <div class="cf-turnstile" data-sitekey="0x4AAAAAACI_-v9DrQ6TwGpx" data-theme="dark"></div>
-
-    <button class="btn-init" id="init-btn" onclick="startBoost()">INITIALIZE</button>
+    <button class="btn-init" id="init-btn" onclick="startBoost()">INITIALIZE PREMIUM</button>
 
     <div class="activity-list" id="activity-list"></div>
 </div>
 
 <script>
-    function formatTime(ts) {
-        const sec = Math.floor(Date.now() / 1000 - ts);
-        if (sec < 0) return "Just now";
-        return sec < 60 ? `${sec}s ago` : `${Math.floor(sec/60)}m ago`;
-    }
-
     async function updateStatus() {
         try {
             const res = await fetch('/api/status');
             const data = await res.json();
-            document.getElementById('global-boosts').innerText = data.global_boosts;
-            document.getElementById('active-proxies').innerText = data.active_proxies;
+            document.getElementById('global-boosts').innerText = data.global_boosts || 0;
+            document.getElementById('active-proxies').innerText = data.active_proxies || 0;
+            
             const list = document.getElementById('activity-list');
             list.innerHTML = ''; 
             if(data.recent_activity) {
                 data.recent_activity.slice(0, 3).forEach(item => {
                     const row = document.createElement('div');
                     row.className = 'activity-row';
-                    row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">${formatTime(item.timestamp)}</span>`;
+                    row.innerHTML = `<span>User Boosted</span><span class="service">${item.service}</span><span class="time">Active</span>`;
                     list.appendChild(row);
                 });
             }
-        } catch (e) { console.warn("Status sync failed"); }
+        } catch (e) { console.warn("Sync failed"); }
     }
 
     async function startBoost() {
         const btn = document.getElementById('init-btn');
         const url = document.getElementById('target-url').value;
+        const key = document.getElementById('access-key').value;
         const service = document.getElementById('service-type').value;
-        const turnstileToken = document.querySelector('[name="cf-turnstile-response"]').value;
 
-        if(!url) return alert("Target URL is required");
-        if(!turnstileToken) return alert("Please complete the security check");
+        if(!url || !key) return alert("URL and Access Key are required");
 
-        btn.innerText = "PROCESSING...";
+        btn.innerText = "AUTHENTICATING...";
         btn.disabled = true;
 
         try {
-            const response = await fetch('/api/boost', {
+            const res = await fetch('/api/boost', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    url: url, 
-                    service_type: service,
-                    captcha_token: turnstileToken 
-                })
+                body: JSON.stringify({ url, service_type: service, access_key: key })
             });
-            const result = await response.json();
-            if (response.ok) {
-                alert(result.message || "✅ Boost Order has been Placed");
+            const result = await res.json();
+            
+            if(res.ok) {
+                alert("✅ ACCESS GRANTED: Premium Boost Initiated");
+                document.getElementById('target-url').value = '';
             } else {
-                alert("❌ Verification failed: " + (result.error || "Security Check Error"));
-                turnstile.reset(); // Reset the widget on failure
+                alert("❌ ACCESS DENIED: " + (result.message || "Invalid Key"));
             }
-        } catch (e) { 
-            alert("Bridge error: Check console for details."); 
-        } finally { 
-            btn.innerText = "INITIALIZE"; 
-            btn.disabled = false; 
+        } catch (e) { alert("❌ Connection Error"); }
+        finally {
+            btn.innerText = "INITIALIZE PREMIUM";
+            btn.disabled = false;
         }
     }
 
-    setInterval(updateStatus, 5000); 
-    updateStatus(); 
+    setInterval(updateStatus, 5000);
+    updateStatus();
 </script>
 </body>
 </html>
