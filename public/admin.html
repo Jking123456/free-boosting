@@ -69,7 +69,6 @@
         .status-waiting { color: #888; font-size: 0.8rem; }
 
         .del-btn { background: none; color: #ff4b2b; width: auto; padding: 5px; font-size: 1.2rem; }
-        
         .copy-btn { background: #222; color: #fff; width: auto; padding: 5px 10px; font-size: 0.7rem; border-radius: 4px; }
     </style>
 </head>
@@ -85,8 +84,8 @@
         <hr style="border: 0.5px solid #222; margin: 20px 0;">
         
         <h3>Generate Paid Key</h3>
-        <label>Duration (Minutes)</label>
-        <input type="number" id="duration-min" value="120">
+        <label>Duration (Hours)</label>
+        <input type="number" id="duration-hrs" value="1" step="0.1">
         <button class="btn-gen" onclick="generateKey()">GENERATE KEY</button>
         
         <div id="result-container" class="result-box">
@@ -106,7 +105,10 @@
 <script>
     async function generateKey() {
         const pass = document.getElementById('admin-pass').value;
-        const dur = document.getElementById('duration-min').value * 60;
+        const hrs = document.getElementById('duration-hrs').value;
+        
+        // Convert Hours to Seconds (1hr = 3600s)
+        const durSeconds = parseFloat(hrs) * 3600;
         
         if(!pass) return alert("Enter Admin Password first!");
 
@@ -114,7 +116,7 @@
             const res = await fetch('/api/admin-manage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pass, action: 'generate', duration: dur })
+                body: JSON.stringify({ pass, action: 'generate', duration: durSeconds })
             });
             const data = await res.json();
             
@@ -143,14 +145,22 @@
             });
             const data = await res.json();
             
-            if(!data.keys) return table.innerHTML = "<p>No keys found.</p>";
+            if(!data.keys || data.keys.length === 0) {
+                return table.innerHTML = "<p style='text-align:center; color:#666;'>No keys found.</p>";
+            }
 
             let html = '';
             data.keys.forEach(k => {
-                // If TTL is -1 it means the key exists but hasn't been activated yet
-                const statusText = k.timeLeft < 0 
-                    ? `<span class="status-waiting">Not Activated</span>` 
-                    : `<span class="status-active">${Math.floor(k.timeLeft / 60)}m left</span>`;
+                let statusText = "";
+                
+                if (k.timeLeft < 0) {
+                    statusText = `<span class="status-waiting">Not Activated</span>`;
+                } else {
+                    // Convert seconds back to H:M format for display
+                    const h = Math.floor(k.timeLeft / 3600);
+                    const m = Math.floor((k.timeLeft % 3600) / 60);
+                    statusText = `<span class="status-active">${h}h ${m}m left</span>`;
+                }
 
                 html += `
                 <div class="key-item">
