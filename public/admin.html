@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HENRY // Admin Panel</title>
+    <style>
+        body { background: #050505; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; }
+        .card { background: #111; padding: 20px; border-radius: 12px; border: 1px solid #333; width: 400px; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #333; box-sizing: border-box; }
+        input { background: #000; color: white; }
+        button { background: #ff4b2b; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .key-list { margin-top: 20px; width: 400px; font-family: monospace; font-size: 0.8rem; }
+        .key-item { background: #1a1a1a; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; }
+        .delete-btn { color: #ff4b2b; cursor: pointer; border: none; background: none; width: auto; padding: 0; margin: 0; }
+    </style>
+</head>
+<body>
+    <h2>ADMIN PANEL</h2>
+    <div class="card">
+        <label>Admin Password</label>
+        <input type="password" id="admin-pass" placeholder="Enter Admin Key">
+        <hr style="border: 0.5px solid #222;">
+        <label>Reset/Delete Customer Key</label>
+        <input type="text" id="target-key" placeholder="e.g. boosting_Jd137jda">
+        <button onclick="manageKey('delete')">RESET KEY (Start Over)</button>
+    </div>
+
+    <div class="key-list" id="status-area"></div>
+
+    <script>
+        async function manageKey(action) {
+            const pass = document.getElementById('admin-pass').value;
+            const key = document.getElementById('target-key').value;
+            if(!pass || !key) return alert("Fill all fields");
+
+            const res = await fetch('/api/admin-manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pass, key, action })
+            });
+            const data = await res.json();
+            alert(data.message);
+        }
+    </script>
+</body>
+</html>
