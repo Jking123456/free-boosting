@@ -2,7 +2,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: "POST only" });
 
     const VALID_KEYS = [
-        "boosting_Jd137jda",
+        "boosting_Jd137jda", //paid
         "boosting_H74ajdtr",
         "boosting_a62Hra7q",
         "boosting_jH38vsH4"
