@@ -9,40 +9,49 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: "POST only" });
 
     const { url, service_type, access_key } = req.body;
-    const ADMIN_KEY = "henry_admin_2026_xyz"; // Your private bypass key
+    const ADMIN_KEY = "henry_admin_2026_xyz"; 
+    
+    // Get user's IP address
+    const userIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     try {
         let authorized = false;
-        let selectedDuration = 7200; // Default 2 hours
 
-        // 1. Check if it's the Admin Master Key (Full Bypass)
         if (access_key === ADMIN_KEY) {
             authorized = true;
         } 
         else {
-            // 2. Check if the key exists in your "Generated Keys" database
             const configDuration = await redis.get(`config:${access_key}`);
 
             if (configDuration) {
-                selectedDuration = parseInt(configDuration);
+                // 1. Check IP Lock
+                const lockedIP = await redis.get(`lock:${access_key}`);
                 
-                // Check if the session is currently active
+                if (lockedIP && lockedIP !== userIP) {
+                    return res.status(403).json({ 
+                        success: false, 
+                        message: "Key is already locked to another device!" 
+                    });
+                }
+
                 const sessionActive = await redis.get(access_key);
 
                 if (!sessionActive) {
-                    // Check if it was already used and finished
                     const hasBeenUsed = await redis.get(`${access_key}_used`);
                     
                     if (hasBeenUsed) {
                         return res.status(401).json({ success: false, message: "Key Expired" });
                     } else {
-                        // FIRST TIME ACTIVATION: Set the timer based on admin setting
-                        await redis.set(access_key, "active", { ex: selectedDuration });
+                        // FIRST TIME ACTIVATION
+                        await redis.set(access_key, "active", { ex: parseInt(configDuration) });
                         await redis.set(`${access_key}_used`, "true");
+                        
+                        // Set the IP lock forever for this key
+                        await redis.set(`lock:${access_key}`, userIP);
+                        
                         authorized = true;
                     }
                 } else {
-                    // Session is still within the active time window
                     authorized = true;
                 }
             }
@@ -52,7 +61,7 @@ export default async function handler(req, res) {
             return res.status(401).json({ success: false, message: "Invalid or Expired Access Key" });
         }
 
-        // 3. Forward the request to the Boosting Service
+        // Forward to Boosting Service
         const response = await fetch('https://axhfreeboosting.axelhosting.xyz/api/boost', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -63,7 +72,6 @@ export default async function handler(req, res) {
         return res.status(response.status).json(data);
 
     } catch (error) {
-        console.error("Redis/API Error:", error);
         return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
