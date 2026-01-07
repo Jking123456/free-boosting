@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Login // Status</title>
+    <style>
+        body { background: #050505; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 50px; }
+        .card { background: #111; padding: 30px; border-radius: 12px; border: 1px solid #222; width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #ff4b2b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #status-result { margin-top: 25px; padding: 15px; border-radius: 8px; display: none; background: #1a1a1a; }
+        .time { font-size: 2rem; color: #00ff88; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Check Key Status</h2>
+        <p style="color: #666; font-size: 0.8rem;">Enter your paid key to see remaining time</p>
+        <input type="text" id="user-key" placeholder="boost_xxxx">
+        <button onclick="checkStatus()">VIEW STATUS</button>
+
+        <div id="status-result">
+            <div id="status-msg"></div>
+            <div id="time-left" class="time"></div>
+            <div id="lock-info" style="font-size: 0.7rem; color: #555; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            const key = document.getElementById('user-key').value;
+            if(!key) return;
+
+            const res = await fetch('/api/check-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            const data = await res.json();
+            
+            const box = document.getElementById('status-result');
+            box.style.display = 'block';
+
+            if(data.success) {
+                document.getElementById('status-msg').innerText = "Session Active";
+                document.getElementById('time-left').innerText = data.hours + "h " + data.mins + "m";
+                document.getElementById('lock-info').innerText = "Locked to IP: " + data.ip;
+            } else {
+                document.getElementById('status-msg').innerText = data.message;
+                document.getElementById('time-left').innerText = "--";
+                document.getElementById('lock-info').innerText = "";
+            }
+        }
+    </script>
+</body>
+</html>
